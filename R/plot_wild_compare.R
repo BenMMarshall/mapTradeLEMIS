@@ -18,7 +18,7 @@ plot_wild_compare <- function(paletteList, ...){
   # library(ggrepel)
   # library(patchwork)
 
-  groups <- c("Reptiles", "Amphibians", "Terrestrial Mammals", "Birds")
+  groups <- c("Reptiles", "Amphibians", "Terrestrial Mammals", "Birds", "Arachnids")
   # grp <- "Birds"
   # targets::tar_source()
   paletteList <- generate_palette()
@@ -43,7 +43,7 @@ plot_wild_compare <- function(paletteList, ...){
     fullOriginData <- originSpeciesData %>%
       left_join(originQuantityData) %>%
       replace(is.na(.), 0) %>%
-      mutate(nWhole_percent_Wild = nWhole_Wild / nWhole_total * 100,
+      mutate(nWhole_percent_Wild = nWhole_Wild / nWhole * 100,
              spp_percent_Wild = nSpp_Wild / nSpp_total * 100)
 
     fullOriginData$group_ <- grp
@@ -56,6 +56,7 @@ plot_wild_compare <- function(paletteList, ...){
         (group_ == "Amphibians" & (nSpp_Wild > 75 | nWhole_Wild > 110000)) |
           (group_ == "Birds" & (nSpp_Wild > 400 | nWhole_Wild > 110000)) |
           (group_ == "Reptiles" & (nSpp_Wild > 200 | nWhole_Wild > 110000)) |
+          (group_ == "Arachnids" & (nSpp_Wild > 40 | nWhole_Wild > 100000)) |
           (group_ == "Terrestrial Mammals" & (nSpp_Wild > 150 | nWhole_Wild > 110000))
       )
 
@@ -83,8 +84,8 @@ plot_wild_compare <- function(paletteList, ...){
       scale_colour_gradient(low = groupColour, high = groupColourDark) +
       scale_size_continuous(range = c(0.25, 5)) +
       labs(x = "Number of species\nlisted as wild sourced", y = "Number of whole individuals\nlisted as wild sourced",
-           colour = str_wrap("Percentage of total traded whole individuals listed as wild sourced", width = 25),
-           size = str_wrap("Percentage of total traded species some level of wild capture listed", width = 25)) +
+           colour = str_wrap("Percentage of total traded whole individuals listed as wild sourced\n(regardless of taxo. listing level)", width = 25),
+           size = str_wrap("Percentage of total traded species with some level of wild capture listed", width = 25)) +
       facet_wrap(.~group_col, scales = "free") +
       theme_bw() +
       theme(
@@ -120,8 +121,13 @@ plot_wild_compare <- function(paletteList, ...){
               axis.title.y = element_blank())
     } else if(grp == "Reptiles"){
       plotWild <- plotWild +
-        theme(axis.title.y = element_blank())
-    } else {
+        theme(axis.title.x = element_blank(),
+              axis.title.y = element_blank())
+    } else if(grp == "Amphibians"){
+      plotWild <- plotWild +
+        theme(axis.title.x = element_blank(),
+              axis.title.y = element_blank())
+    } else if(grp == "Arachnids"){
       plotWild <- plotWild +
         theme(axis.title.y = element_blank())
     }
@@ -130,14 +136,14 @@ plot_wild_compare <- function(paletteList, ...){
   }
 
   allFacets <- patchwork::wrap_plots(
-    allPlotList[c("Terrestrial Mammals", "Birds", "Reptiles", "Amphibians")],
+    allPlotList[c("Terrestrial Mammals", "Birds", "Reptiles", "Amphibians", "Arachnids")],
     ncol = 2)
 
   ggsave(plot = allFacets, filename = here("figures", "wildComparePlot.png"),
-         width = 360, height = 280,
+         width = 400, height = 360,
          dpi = 300, units = "mm")
   ggsave(plot = allFacets, filename = here("figures", "wildComparePlot.pdf"),
-         width = 360, height = 280,
+         width = 400, height = 360,
          units = "mm")
 
   return(allFacets)

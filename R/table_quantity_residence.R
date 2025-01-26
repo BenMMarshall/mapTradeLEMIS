@@ -7,53 +7,25 @@
 #' @export
 table_quantity_residence <- function(lemisDataFiltered, lemisISOconversion,
                                      worldDataList, portLocations,
-                                     allDistributionDataList){
+                                     allDistributionData){
 
   # targets::tar_load("lemisDataFiltered")
   # targets::tar_load("lemisISOconversion")
   # targets::tar_load("worldDataList")
   # targets::tar_load("portLocations")
   # targets::tar_load("paletteList")
-  # targets::tar_load("allDistributionDataList")
+  # targets::tar_load("allDistributionData")
 
-  lemisData <- lemisDataFiltered %>%
-    filter(import_export == "I") %>%
-    filter(!group_ == "Miscellaneous" & !is.na(group_)) %>%
-    mutate(code_origin = sub("Ctry_", "", country_origin),
-           code_imp = sub("Ctry_", "", country_imp_exp)) %>%
-    left_join(lemisISOconversion) %>%
-    mutate(vert = case_when(group_ %in% c("Terrestrial Mammals",
-                                          "Reptiles",
-                                          "Birds",
-                                          "Amphibians",
-                                          "Fish",
-                                          "Marine Mammals") ~ "Vertebrates",
-                            group_ %in% c("Crustaceans and Molluscs",
-                                          "Arachnids",
-                                          "Insecta and Myriapoda",
-                                          "Other Invertebrates",
-                                          "Lepidoptera",
-                                          "Echinoderms and Cnidaria",
-                                          "Porifera Sponges, Bryozoa, and Squirts",
-                                          "Plants",
-                                          "Miscellaneous") ~ "Invertebrates"),
-           vert = factor(vert, levels = c("Vertebrates", "Invertebrates"))) %>%
-    mutate(
-      originCapWild = case_when(
-        source %in% c("A", "C", "D", "F") ~ "Captive",
-        source == "R" ~ "Ranched",
-        source == "W" ~ "Wild",
-        TRUE ~ "Other"
-      )
-    )
+  lemisData <- lemisDataFiltered  %>%
+    filter(rank == "Species" & !corrected == "")
 
   lemisData[which(is.na(lemisData$iso2) & lemisData$country_origin == "Ctry_NA"),]$iso2 <- "NA"
 
-  grpVector <- c("Birds", "Terrestrial Mammals", "Amphibians", "Reptiles")
+  grpVector <- c("Birds", "Terrestrial Mammals", "Amphibians", "Reptiles", "Arachnids")
 
   grpLower <- str_to_lower(ifelse(grpVector == "Terrestrial Mammals", "mammals", grpVector))
-  stillMissingList <- vector("list", length = length(grpLower))
-  names(stillMissingList) <- grpLower
+  retryGBIF <- vector("list", length = length(grpLower))
+  names(retryGBIF) <- grpLower
 
   tableList <- vector("list", length = length(grpVector))
   names(tableList) <- grpVector
@@ -63,30 +35,27 @@ table_quantity_residence <- function(lemisDataFiltered, lemisISOconversion,
     # grp <- "Amphibians"
     # grp <- "Birds"
     # grp <- "Terrestrial Mammals"
+    # grp <- "Arachnids"
     grpL <- str_to_lower(ifelse(grp == "Terrestrial Mammals", "mammals", grp))
 
     lemisGroup <- lemisData %>%
       filter(group_ == grp)
 
-    if(grp == "Birds"){
-      distData <- allDistributionDataList$birds
-    } else if(grp == "Terrestrial Mammals"){
-      distData <- allDistributionDataList$mammals
-    } else if(grp == "Amphibians"){
-      distData <- allDistributionDataList$amphibians
-    } else if(grp == "Reptiles"){
-      distData <- allDistributionDataList$reptiles
-    }
+    distData <- allDistributionData %>%
+      filter(group_ == grpL)
 
     lemisGroup_dist <- lemisGroup %>%
       filter(!corrected == "") %>%
-      left_join(distData %>%
-                  filter(!is.na(distISO2) & !distISO2 == "<NA>"),
+      left_join(distData,
                 by = "corrected")
+
+    retryGBIF <- unique(lemisGroup_dist[is.na(lemisGroup_dist$allDistISO2),]$corrected)
+
+    save(retryGBIF, file = here("data", paste0("retryGBIF_", grpL, ".rds")))
 
     lemisGroup_dist <- lemisGroup_dist %>%
       rowwise() %>%
-      mutate(nativeOrigin = str_detect(distISO2, iso2))
+      mutate(nativeOrigin = str_detect(allDistISO2, iso2))
 
     lemisGroup_long <- lemisGroup_dist %>%
       group_by(iso2, nativeOrigin) %>%

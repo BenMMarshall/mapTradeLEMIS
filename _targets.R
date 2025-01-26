@@ -29,6 +29,8 @@ tar_option_set(
                "scatterpie",
                "colorspace"
   ), # packages that your targets need to run
+  # controller = crew::crew_controller_local(workers = 3, seconds_idle = 60),
+  # error = "continue",
   format = "rds" # default storage format
   # Set other options as needed.
 )
@@ -65,29 +67,24 @@ list(
     read_world_data()
   ),
   tar_target(
-    iucnDistributionList,
-    iucn_distribution_data()
+    allDistributionData,
+    combine_distribution_data()
   ),
   tar_target(
     extraManualDistributionDataList,
     read_extraManualDistribution_data()
   ),
   tar_target(
-    allDistributionDataList,
-    combine_distribution_data(iucnDistributionList,
-                              gbifDistributionList)
+    lemisDataRenamed,
+    read_renamed_data(extraManualDistributionDataList, lemisISOconversion)
   ),
   tar_target(
-    lemisDataRenamed,
-    read_renamed_data(extraManualDistributionDataList)
+    lemisDataFiltered,
+    read_filtered_data(extraManualDistributionDataList, lemisISOconversion)
   ),
   tar_target(
     paletteList,
     generate_palette()
-  ),
-  tar_target(
-    lemisDataFiltered,
-    read_filtered_data(extraManualDistributionDataList)
   ),
   tar_target(
     iucnSummary,
@@ -97,33 +94,17 @@ list(
     iucnSummaryPlot,
     plot_iucn_summary(iucnSummary, paletteList)
   ),
-  # tar_target(
-  #   tableSpeciesOrigin,
-  #   table_species_origin(lemisDataCorrected = lemisDataRenamed,
-  #                        portLocations = portLocations,
-  #                        lemisISOconversion = lemisISOconversion,
-  #                        worldDataList = worldDataList)
-  # ),
-  # tar_target(
-  #   tableQuantityOrigin,
-  #   table_quantity_origin(lemisDataFiltered = lemisDataFiltered,
-  #                         portLocations = portLocations,
-  #                         lemisISOconversion = lemisISOconversion,
-  #                         worldDataList = worldDataList)
-  # ),
   tar_target(
     plotSpeciesOrigin,
     plot_species_origin(lemisDataCorrected = lemisDataRenamed,
                         portLocations = portLocations,
                         paletteList = paletteList,
-                        lemisISOconversion = lemisISOconversion,
                         worldDataList = worldDataList)
   ),
   tar_target(
     tableSpeciesOrigin,
     table_species_origin(lemisDataCorrected = lemisDataRenamed,
                          portLocations = portLocations,
-                         lemisISOconversion = lemisISOconversion,
                          worldDataList = worldDataList)
   ),
   tar_target(
@@ -131,14 +112,12 @@ list(
     plot_quantity_origin(lemisDataFiltered = lemisDataFiltered,
                          portLocations = portLocations,
                          paletteList = paletteList,
-                         lemisISOconversion = lemisISOconversion,
                          worldDataList = worldDataList)
   ),
   tar_target(
     tableQuantityOrigin,
     table_quantity_origin(lemisDataFiltered = lemisDataFiltered,
                           portLocations = portLocations,
-                          lemisISOconversion = lemisISOconversion,
                           worldDataList = worldDataList)
   ),
   tar_target(
@@ -146,32 +125,28 @@ list(
     plot_live_origin(lemisDataFiltered = lemisDataFiltered,
                      portLocations = portLocations,
                      paletteList = paletteList,
-                     lemisISOconversion = lemisISOconversion,
                      worldDataList = worldDataList)
   ),
   tar_target(
     plotSpeciesResidence,
     plot_species_residence(lemisDataRenamed = lemisDataRenamed,
-                           lemisISOconversion = lemisISOconversion,
                            worldDataList = worldDataList,
                            portLocations = portLocations,
                            paletteList = paletteList,
-                           allDistributionDataList = allDistributionDataList
+                           allDistributionData = allDistributionData
     )
   ),
   tar_target(
     tableQuantityResidence,
     table_quantity_residence(lemisDataFiltered = lemisDataFiltered,
-                             lemisISOconversion = lemisISOconversion,
                              worldDataList = worldDataList,
                              portLocations = portLocations,
-                             allDistributionDataList = allDistributionDataList
+                             allDistributionData = allDistributionData
     )
   ),
   tar_target(
     tableSupps,
-    table_supp_clean(
-    )
+    table_supp_clean(tableQuantityResidence)
   ),
   tar_target(
     plotSpeciesMismatch,
@@ -186,10 +161,24 @@ list(
     )
   ),
   tar_target(
+    plotResidentEndemicWild,
+    plot_resident_endemicWild(lemisDataRenamed,
+                              worldDataList,
+                              portLocations,
+                              paletteList,
+                              allDistributionData
+    )
+  ),
+  tar_target(
+    plotExtinctPurpose,
+    plot_extinct_purpose(lemisDataRenamed, paletteList
+    )
+  ),
+  tar_target(
     outputResults,
-    render_rmd(fileIN = here::here("notebook",
+    render_rmd(fileIN = here::here("notebook", "manuscript",
                                    "mapLEMISResults.Rmd"),
-               fileOUT = here::here("notebook",
+               fileOUT = here::here("notebook", "manuscript",
                                     "mapLEMISResults.html"),
                tableSupps, plotSpeciesResidence),
     priority = 0

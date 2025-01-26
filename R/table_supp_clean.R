@@ -5,23 +5,30 @@
 #' @return csvs
 #'
 #' @export
-table_supp_clean <- function(){
+table_supp_clean <- function(...){
 
-  for(grp in c("Reptiles", "Amphibians", "Terrestrial Mammals", "Birds")){
+  for(grp in c("Reptiles", "Amphibians", "Terrestrial Mammals", "Birds", "Arachnids")){
 
-    resiCapWildQuant <- read.csv(here::here("tables", paste0("originQuantity_capWildRanch_", grp, ".csv")))
-    resiQuant <- read.csv(here::here("tables", paste0("residenceQuantity_", grp, ".csv")))
-    resiMismatchQuant <- read.csv(here::here("tables", paste0("residenceWildMismatchQuantity_", grp, ".csv")))
+    resiCapWildQuant <- read.csv(here::here("tables", paste0("originQuantity_capWildRanch_", grp, ".csv")),
+                                 na.strings = c("", "<NA>"))
+
+    resiQuant <- read.csv(here::here("tables", paste0("residenceQuantity_", grp, ".csv")),
+                          na.strings = c("", "<NA>")) %>%
+      rename("nWhole_total_spLevel" = nWhole_total)
+    resiMismatchQuant <- read.csv(here::here("tables", paste0("residenceWildMismatchQuantity_", grp, ".csv")),
+                                  na.strings = c("", "<NA>"))
 
     quantOriginResidenceTable <- resiCapWildQuant %>%
-      left_join(resiQuant) %>%
-      left_join(resiMismatchQuant) %>%
+      left_join(resiQuant %>%
+                  select(-centre_y_origin, -centre_x_origin)) %>%
+      left_join(resiMismatchQuant %>%
+                  select(-nWhole)) %>%
       select(
         iso2, country_name, centre_y_origin, centre_x_origin,
-        nWhole_total,
+        nWhole,
         "nWhole_Wild" = Wild, "nWhole_Captive" = Captive, "nWhole_Ranched" = Ranched, "nWhole_Other" = Other,
         "nWhole_NonResident" = NonResident, "nWhole_Resident" = Resident, "nWhole_UnknownResident" = Unknown,
-        "nWhole_NonResidentWildMismatch" = nWholeNonResidentWildMismatch
+        "nWhole_NonResidentWildMismatch" = nWholeNonResidentWildMismatch, nWhole_total_spLevel = nWhole_total_spLevel
       )
 
     quantOriginResidenceTable[is.na(quantOriginResidenceTable)] <- 0

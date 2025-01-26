@@ -13,28 +13,7 @@ plot_quantity_origin <- function(lemisDataFiltered,
 
   # targets::tar_load("lemisDataFiltered")
 
-  mapDataFiltered <- lemisDataFiltered %>%
-    filter(import_export == "I") %>%
-    filter(!group_ == "Miscellaneous" & !is.na(group_)) %>%
-    mutate(code_origin = sub("Ctry_", "", country_origin),
-           code_imp = sub("Ctry_", "", country_imp_exp)) %>%
-    left_join(lemisISOconversion) %>%
-    mutate(vert = case_when(group_ %in% c("Terrestrial Mammals",
-                                          "Reptiles",
-                                          "Birds",
-                                          "Amphibians",
-                                          "Fish",
-                                          "Marine Mammals") ~ "Vertebrates",
-                            group_ %in% c("Crustaceans and Molluscs",
-                                          "Arachnids",
-                                          "Insecta and Myriapoda",
-                                          "Other Invertebrates",
-                                          "Lepidoptera",
-                                          "Echinoderms and Cnidaria",
-                                          "Porifera Sponges, Bryozoa, and Squirts",
-                                          "Plants",
-                                          "Miscellaneous") ~ "Invertebrates"),
-           vert = factor(vert, levels = c("Vertebrates", "Invertebrates")))
+  mapDataFiltered <- lemisDataFiltered
 
   plotList <- vector("list", length = length(unique(mapDataFiltered$group_)))
   names(plotList) <- unique(mapDataFiltered$group_)

@@ -12,10 +12,10 @@ plot_species_mismatch <- function(paletteList, ...){
   # paletteList <- generate_palette()
 
   # grp <- "Amphibians"
-  groups <- c("Reptiles", "Amphibians", "Terrestrial Mammals", "Birds")
+  groups <- c("Reptiles", "Amphibians", "Terrestrial Mammals", "Birds", "Arachnids")
   allOriginList <- list()
   i <- 0
-  for(grp in c("Reptiles", "Amphibians", "Terrestrial Mammals", "Birds")){
+  for(grp in groups){
     i <- i +1
     speciesOriginResidenceTable <- read.csv(here::here("tables", paste0("SuppTable - SpeciesOriginResidence_", grp, ".csv")))
     quantOriginResidenceTable <- read.csv(here::here("tables", paste0("SuppTable - QuantOriginResidence_", grp, ".csv")))
@@ -40,6 +40,7 @@ plot_species_mismatch <- function(paletteList, ...){
       (group_ == "Amphibians" & (nSpp_NonResidentWildMismatch > 18 | nSpp_total > 115)) |
         (group_ == "Birds" & (nSpp_NonResidentWildMismatch > 100 | nSpp_total > 700)) |
         (group_ == "Reptiles" & (nSpp_NonResidentWildMismatch > 100 | nSpp_total > 400)) |
+        (group_ == "Arachnids" & (nSpp_NonResidentWildMismatch > 20 | nSpp_total > 110)) |
         (group_ == "Terrestrial Mammals" & (nSpp_NonResidentWildMismatch > 75 | nSpp_total > 250))
     )
 

@@ -4,7 +4,7 @@ library(stringr)
 library(taxize)
 library(readr)
 
-extDistFiles <- list.files(here("data", "speciesDistributions"), pattern = "distributionData.csv$",
+extDistFiles <- list.files(here("data", "externalDistributionData"), pattern = "distributionData.csv$",
                            full.names = TRUE)
 groups_ <- gsub("_distributionData.csv", "", unlist(lapply(str_split(extDistFiles, "/"), function(x){tail(x, 1)})))
 distributionDataList <- lapply(extDistFiles, function(x){
@@ -25,9 +25,9 @@ distributionDataList$amphibians <- distributionDataList$amphibians %>%
 
 nameReviewList <- vector("list", length = length(groups_))
 names(nameReviewList) <- groups_
-for(grp in names(distributionDataList)){
+for(grp in groups_){
   # grp <- names(distributionDataList)[1]
-  # grp <- "arachnids"
+  # grp <- "mammals"
   print(grp)
 
   if("temp_nameReviewList" %in% list.files(here("data"))){
@@ -201,8 +201,11 @@ save(allNamesList, file = here("data", "temp_allNamesList"))
 # apply GBIF conversion to files ------------------------------------------
 
 for(grp in names(distributionDataList)){
-  # grp <- names(distributionDataList)[1]
-
+  # grp <- names(distributionDataList)[4]
+  if(grp == "mammals"){
+    distributionDataList[[grp]] <- distributionDataList[[grp]] %>%
+      mutate(inputName = gsub("_", " ", inputName))
+  }
   write.csv(distributionDataList[[grp]] %>%
               left_join(allNamesList[[grp]] %>%
                           rename("inputName" = submittedName), by = "inputName") %>%

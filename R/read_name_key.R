@@ -136,70 +136,20 @@ read_world_data <- function(){
 }
 
 #' @export
-iucn_distribution_data <- function(){
-
-  IUCNAllList <- vector("list", length = 4)
-  names(IUCNAllList) <- c("amphibians", "birds", "mammals", "reptiles")
-  for(n in names(IUCNAllList)){
-    # n <- names(IUCNAllList)[1]
-    if(n == "birds"){
-      iDistData1  <- read.csv(here("data", "iucnData",
-                                   paste0(n, "_countries1.csv")),
-                              na.strings = "<NA>")
-      iDistData2  <- read.csv(here("data", "iucnData",
-                                   paste0(n, "_countries2.csv")),
-                              na.strings = "<NA>")
-      iDistData <- rbind(iDistData1, iDistData2)
-    } else {
-      iDistData  <- read.csv(here("data", "iucnData",
-                                  paste0(n, "_countries.csv")),
-                             na.strings = "<NA>")
-    }
-
-    iNamesData  <- read.csv(here("data", "iucnData",
-                                 paste0(n, "_gbifNames.csv")),
-                            na.strings = "<NA>")
-    iSynsData  <- read.csv(here("data", "iucnData",
-                                paste0(n, "_synonyms.csv")),
-                           na.strings = "<NA>")
-
-    iDistData_present <- iDistData %>%
-      # filter(presence == "Extant" | presence == "Possibly Extant") %>%
-      group_by(scientificName) %>%
-      summarise(iucnDistIso2 = paste0(code, collapse = ", "))
-
-    iSynsData <- iSynsData %>%
-      select(scientificName, synonym) %>%
-      group_by(scientificName) %>%
-      summarise(iucnSyns = paste0(synonym, collapse = ", "))
-
-    iDataAll <- iNamesData %>%
-      rename("scientificName" = user_supplied_name) %>%
-      left_join(iDistData_present, by = "scientificName") %>%
-      left_join(iSynsData, by = c("scientificName"))
-
-    iDataAll <- iDataAll %>%
-      group_by(corrected) %>%
-      summarise(iucnDistIso2 = paste0(iucnDistIso2, collapse = ", "),
-                iucnSyns = paste0(iucnSyns, collapse = ", "))
-
-    IUCNAllList[[n]] <- iDataAll
-  }
-  return(IUCNAllList)
-
-}
-
-
-#' @export
 read_extraManualDistribution_data <- function(){
 
-  extraManualDistributionDataList <- vector("list", length = 4)
-  names(extraManualDistributionDataList) <- c("amphibians", "birds", "mammals", "reptiles")
+  extraManualDistributionDataList <- vector("list", length = 5)
+  names(extraManualDistributionDataList) <- c("amphibians", "birds", "mammals", "reptiles", "arachnids")
   for(n in names(extraManualDistributionDataList)){
+    if(n == "arachnids"){
+      {next}
+    }
     emdRead <- read.csv(here("data",
-                             paste0(n, "_gbifDistMissing_filled.csv")))
+                             paste0(n, "_nameFixes.csv")))
     emdRead$corrected <- trimws(emdRead$corrected)
     emdRead$correctedSpelling <- trimws(emdRead$correctedSpelling)
+    emdRead <- emdRead %>%
+      filter(!correctedSpelling == "")
     extraManualDistributionDataList[[n]] <- emdRead
   }
 
@@ -211,107 +161,162 @@ read_extraManualDistribution_data <- function(){
 #' @export
 combine_distribution_data <- function(extraManualDistributionDataList){
 
-  distributionDataList <- vector("list", length = 4)
-  names(distributionDataList) <- c("amphibians", "birds", "mammals", "reptiles")
+  distributionDataList <- vector("list", length = 5)
+  names(distributionDataList) <- c("amphibians", "birds", "mammals", "reptiles", "arachnids")
   for(n in names(distributionDataList)){
-    distributionDataList[[n]] <- read.csv(here("data", "speciesDistributions",
-                                               paste0(n, "_distributionData_gbifNames.csv")))
+    extData <- read.csv(here("data", "externalDistributionData",
+                             paste0(n, "_distributionData_gbifNames.csv")),
+                        na.strings = c("", "<NA>"))
+    if(n == "arachnids"){
+      extData_corr <- extData %>%
+        group_by(corrected, group_) %>%
+        summarise(extDistISO2 = paste0(distISO2, collapse = ", "))
+      extData_alt <- extData %>%
+        group_by(inputName, group_) %>%
+        summarise(extDistISO2 = paste0(distISO2, collapse = ", "))
+    } else if(n == "birds"){
+      extData_corr <- extData %>%
+        group_by(corrected, group_) %>%
+        summarise(extDistISO2 = paste0(iso2, collapse = ", "))
+      extData_alt <- extData %>%
+        group_by(inputName, group_) %>%
+        summarise(extDistISO2 = paste0(iso2, collapse = ", "))
+    } else if(n == "mammals"){
+      extData_corr <- extData %>%
+        group_by(corrected, group_) %>%
+        summarise(extDistISO2 = paste0(distISO2, collapse = ", "))
+      extData_alt <- extData %>%
+        group_by(inputName, group_) %>%
+        summarise(extDistISO2 = paste0(distISO2, collapse = ", "))
+    } else if(n == "reptiles"){
+      extData_corr <- extData %>%
+        group_by(corrected, group_) %>%
+        summarise(extDistISO2 = paste0(distISO2, collapse = ", "))
+      extData_alt <- extData %>%
+        group_by(inputName, group_) %>%
+        summarise(extDistISO2 = paste0(distISO2, collapse = ", "))
+    } else if(n == "amphibians"){
+      extData_corr <- extData %>%
+        group_by(corrected, group_) %>%
+        summarise(extDistISO2 = paste0(iso2, collapse = ", "))
+      extData_alt <- extData %>%
+        group_by(inputName, group_) %>%
+        summarise(extDistISO2 = paste0(iso2, collapse = ", "))
+    }
+    extData <- rbind(extData_corr, extData_alt %>%
+                       rename(corrected = inputName))
+
+    distributionDataList[[n]] <- extData
+
   }
 
-  extraGBIFDistributionDataList <- vector("list", length = 4)
-  names(extraGBIFDistributionDataList) <- c("amphibians", "birds", "mammals", "reptiles")
-  for(n in names(extraGBIFDistributionDataList)){
-    extraGBIFDistributionDataList[[n]] <- read.csv(here("data",
-                                                        paste0(n, "_gbifDistFill.csv")))
-  }
-
-  extraGBIFDistribution_2DataList <- vector("list", length = 4)
-  names(extraGBIFDistribution_2DataList) <- c("amphibians", "birds", "mammals", "reptiles")
-  for(n in names(extraGBIFDistribution_2DataList)){
-    extraGBIFDistribution_2DataList[[n]] <- read.csv(here("data",
-                                                          paste0(n, "_gbifDistFill_2.csv")))
-  }
-
-  iucnDistributionDataList <- vector("list", length = 4)
-  names(iucnDistributionDataList) <- c("amphibians", "birds", "mammals", "reptiles")
+  iucnDistributionDataList <- vector("list", length = 5)
+  names(iucnDistributionDataList) <- c("amphibians", "birds", "mammals", "reptiles", "arachnids")
   for(n in names(iucnDistributionDataList)){
-    iucnDistributionDataList[[n]] <- read.csv(here("data", "iucnData",
-                                                   paste0(n, "_synonymDist.csv")))
-  }
-  iucnDistributionDataList[["mammals"]][iucnDistributionDataList[["mammals"]]$species == "Bison bison",]
+    iucnData <- read.csv(here("data", "iucnData",
+                              paste0(n, "_countries_gbifNames.csv")),
+                         na.strings = c("", "<NA>")) %>%
+      filter(presence %in% c("Extant", "Possibly Extant")) %>%
+      select(scientificName, corrected, code, group_)
 
-  countryNamesRegex <- countrycode::codelist[,c("country.name.en.regex", "iso2c")]
+    iucnSynData <- read.csv(here("data", "iucnData", paste0(n, "_synonyms.csv")))
+    iucnSynData <- iucnSynData %>%
+      mutate(synonym = paste(genusName, speciesName)) %>%
+      select(scientificName, synonym)
 
-  eMdistData <- extraManualDistributionDataList
-  names(extraManualDistributionDataList)
-  eMdistDataList <- list()
-  for(grp in names(extraManualDistributionDataList)){
-    print(grp)
-    eMdistData <- extraManualDistributionDataList[[grp]]
-    for(r in 1:nrow(eMdistData)){
-      # r <- 1
-      if(is.na(eMdistData[r,]$distISO2) | eMdistData[r,]$distISO2 == "<NA>"){
-        eMdistData[r,]$distISO2 <- paste(countryNamesRegex$iso2c[str_detect(str_to_lower(eMdistData[r,]$text),
-                                                                            countryNamesRegex$country.name.en.regex)],
-                                         collapse = ", ")
-      }
-    }
-    eMdistDataList[[grp]] <- eMdistData
-  }
+    iucnData_corr <- iucnData %>%
+      group_by(corrected, group_) %>%
+      summarise(iucnDistISO2 = paste0(code, collapse = ", "))
 
-  ddList <- lapply(distributionDataList, function(x){
-    x %>%
-      select(corrected, distISO2)
-  })
-  egList <- lapply(extraGBIFDistributionDataList, function(x){
-    x %>%
-      select(corrected, distISO2)
-  })
-  eg2List <- lapply(extraGBIFDistribution_2DataList, function(x){
-    x %>%
-      select(corrected, distISO2)
-  })
-  emList <- lapply(eMdistDataList, function(x){
-    x %>%
-      dplyr::select("corrected" = correctedSpelling, distISO2)
-  })
-  iuList <- lapply(iucnDistributionDataList, function(x){
-    x %>%
-      select("corrected" = species, distISO2)
-  })
+    iucnData_alt <- iucnData %>%
+      group_by(scientificName, group_) %>%
+      summarise(iucnDistISO2 = paste0(code, collapse = ", "))
 
-  allDistList <- list()
-  for(grp in names(ddList)){
-    df <- rbind(ddList[[grp]],
-                egList[[grp]],
-                eg2List[[grp]],
-                emList[[grp]],
-                iuList[[grp]])
-    df <- df %>%
-      filter(!is.na(corrected)) %>%
-      mutate(group_ = grp)
-    allDistList[[grp]] <- df
+    iucnData <- rbind(iucnData_corr, iucnData_alt %>%
+                        rename(corrected = scientificName))
 
-  }
+    iucnDataSynDist <- vector("list", length = length(unique(iucnSynData$scientificName)))
+    names(iucnDataSynDist) <- unique(iucnSynData$scientificName)
+    for(sci in unique(iucnSynData$scientificName)){
 
-  # loop for making sure duplicates are corrected into a single entry
-  for(n in names(allDistList)){
-    distData <- allDistList[[n]]
-    for(c in unique(distData$corrected)){
-      # c <- "Ablepharus pannonicus"
-      # c <- "Uma inornata"
-      # c <- unique(distData$corrected)[1]
-      if(nrow(distData[distData$corrected == c,]) > 1){
-        distISO2_combined <- unique(unlist(str_split(distData[distData$corrected == c,]$distISO2, ", ")))
-        distData[distData$corrected == c,]$distISO2 <- paste0(distISO2_combined, collapse = ", ")
+      if(nrow(iucnData[iucnData$corrected == sci,]) > 0){
+        iucnDataSynDist[[sci]] <- data.frame(corrected = iucnSynData[iucnSynData$scientificName == sci,]$synonym,
+                                             iucnDistISO2 = iucnData[iucnData$corrected == sci,]$iucnDistISO2[1],
+                                             group_ = iucnData[iucnData$corrected == sci,]$group_[1])
       } else {
-        {next}
+        iucnDataSynDist[[sci]] <- NULL
       }
+
     }
-    allDistList[[n]] <- distData %>%
-      filter(!duplicated(corrected))
+    iucnDataSynDist <- do.call(rbind, iucnDataSynDist)
+
+    iucnData <- rbind(iucnData, iucnDataSynDist)
+
+    iucnDistributionDataList[[n]] <- iucnData
   }
 
-  return(allDistList)
+  gbifDistributionDataList <- vector("list", length = 5)
+  names(gbifDistributionDataList) <- c("amphibians", "birds", "mammals", "reptiles", "arachnids")
+  for(n in names(gbifDistributionDataList)){
+    gbifDistributionDataList[[n]] <- read.csv(here("data", "gbifDistData",
+                                                   paste0(n, "_gbifCountries.csv")),
+                                              na.strings = c("", "<NA>")) %>%
+      select(corrected, "gbifDistISO2" = gbifDistIso2, group_)
+  }
+
+  # allDistList <- list()
+  # for(grp in names(gbifDistributionDataList)){
+  #   allDistList[[grp]] <- distributionDataList[[grp]] %>%
+  #     full_join(iucnDistributionDataList[[grp]]) %>%
+  #     full_join(gbifDistributionDataList[[grp]]) %>%
+  #     filter(!is.na(corrected) | corrected == "NA")
+  # }
+  # allDistributionData <- do.call(rbind, allDistList)
+
+  allDistributionDataList <- vector("list", length = 5)
+  names(allDistributionDataList) <- names(distributionDataList)
+  for(n in names(distributionDataList)){
+    print(n)
+    uniNames <- unique(c(distributionDataList[[n]]$corrected,
+                         iucnDistributionDataList[[n]]$corrected,
+                         gbifDistributionDataList[[n]]$corrected))
+    withinGroupList <- vector("list", length = length(uniNames))
+    names(withinGroupList) <- uniNames
+    for(sp in uniNames){
+      print(sp)
+      # sp<- "Nhandu carapoensis"
+
+      uniqueISO2 <- unique(c(str_split(distributionDataList[[n]][distributionDataList[[n]]$corrected == sp,]$extDistISO2,
+                                       ", ", simplify = TRUE),
+                             str_split(iucnDistributionDataList[[n]][iucnDistributionDataList[[n]]$corrected == sp,]$iucnDistISO2,
+                                       ", ", simplify = TRUE),
+                             str_split(gbifDistributionDataList[[n]][gbifDistributionDataList[[n]]$corrected == sp,]$gbifDistISO2,
+                                       ", ", simplify = TRUE)))
+
+      withinGroupList[[sp]] <- data.frame(corrected = sp,
+                                          allDistISO2 = paste0(uniqueISO2, collapse = ", "),
+                                          group_ = n)
+
+    }
+    allDistributionDataList[[n]] <- do.call(rbind, withinGroupList)
+
+  }
+  allDistributionData <- do.call(rbind, allDistributionDataList)
+
+  # allDistributionData$allDistISO2 <- NA
+  # for(r in 1:nrow(allDistributionData)){
+  #   # r <- 2
+  #   print(r)
+  #   uniqueISO2 <- unique(c(str_split(allDistributionData$extDistISO2[r], ", ", simplify = TRUE),
+  #                          str_split(allDistributionData$iucnDistISO2[r], ", ", simplify = TRUE),
+  #                          str_split(allDistributionData$gbifDistISO2[r], ", ", simplify = TRUE)))
+  #   uniqueISO2 <- uniqueISO2[!uniqueISO2 == "" & !is.na(uniqueISO2)]
+  #   allDistributionData[r,]$allDistISO2 <- paste0(uniqueISO2, collapse = ", ")
+  # }
+
+  allDistributionData <- allDistributionData %>%
+    filter(!is.na(corrected) & !corrected == "" & !corrected == "NA")
+
+  return(allDistributionData)
 
 }

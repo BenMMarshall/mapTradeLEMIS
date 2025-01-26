@@ -10,42 +10,14 @@ table_species_origin <- function(lemisDataCorrected,
                                  lemisISOconversion,
                                  worldDataList){
 
+  # targets::tar_load("lemisDataRenamed")
   # targets::tar_load("portLocations")
   # targets::tar_load("worldDataList")
   # targets::tar_load("lemisISOconversion")
   # lemisDataCorrected <- lemisDataRenamed
 
   mapDataCorrected <- lemisDataCorrected %>%
-    filter(import_export == "I") %>%
-    filter(rank == "Species") %>%
-    filter(!group_ == "Miscellaneous" & !is.na(group_)) %>%
-    mutate(code_origin = sub("Ctry_", "", country_origin),
-           code_imp = sub("Ctry_", "", country_imp_exp)) %>%
-    left_join(lemisISOconversion) %>%
-    mutate(vert = case_when(group_ %in% c("Terrestrial Mammals",
-                                          "Reptiles",
-                                          "Birds",
-                                          "Amphibians",
-                                          "Fish",
-                                          "Marine Mammals") ~ "Vertebrates",
-                            group_ %in% c("Crustaceans and Molluscs",
-                                          "Arachnids",
-                                          "Insecta and Myriapoda",
-                                          "Other Invertebrates",
-                                          "Lepidoptera",
-                                          "Echinoderms and Cnidaria",
-                                          "Porifera Sponges, Bryozoa, and Squirts",
-                                          "Plants",
-                                          "Miscellaneous") ~ "Invertebrates"),
-           vert = factor(vert, levels = c("Vertebrates", "Invertebrates"))) %>%
-    mutate(
-      originCapWild = case_when(
-        source %in% c("A", "C", "D", "F") ~ "Captive",
-        source == "R" ~ "Ranched",
-        source == "W" ~ "Wild",
-        TRUE ~ "Other"
-      )
-    )
+    filter(rank == "Species")
 
   # plotList <- vector("list", length = length(unique(mapDataCorrected$group_)))
   # names(plotList) <- unique(mapDataCorrected$group_)
@@ -86,10 +58,11 @@ table_species_origin <- function(lemisDataCorrected,
 
     originSpeciesWide <- mapDataCorrected %>%
       filter(group_ == grp) %>%
-      group_by(iso2, country_name, originCapWild) %>%
+      group_by(iso2, country_name, originCapWild, group_) %>%
       summarise(nSpp = n_distinct(corrected)) %>%
       pivot_wider(values_from = nSpp, names_from = originCapWild) %>%
       mutate_if(is.integer, ~replace(., is.na(.), 0)) %>%
+      mutate_if(is.numeric, ~replace(., is.na(.), 0)) %>%
       left_join(originSpecies_total) %>%
       left_join(worldDataList$worldDataCountryCentres)
 

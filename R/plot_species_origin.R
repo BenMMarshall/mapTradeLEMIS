@@ -12,28 +12,7 @@ plot_species_origin <- function(lemisDataCorrected,
                                 worldDataList){
   # lemisDataCorrected <- lemisDataRenamed
   mapDataCorrected <- lemisDataCorrected %>%
-    filter(import_export == "I") %>%
-    filter(rank == "Species") %>%
-    filter(!group_ == "Miscellaneous" & !is.na(group_)) %>%
-    mutate(code_origin = sub("Ctry_", "", country_origin),
-           code_imp = sub("Ctry_", "", country_imp_exp)) %>%
-    left_join(lemisISOconversion) %>%
-    mutate(vert = case_when(group_ %in% c("Terrestrial Mammals",
-                                          "Reptiles",
-                                          "Birds",
-                                          "Amphibians",
-                                          "Fish",
-                                          "Marine Mammals") ~ "Vertebrates",
-                            group_ %in% c("Crustaceans and Molluscs",
-                                          "Arachnids",
-                                          "Insecta and Myriapoda",
-                                          "Other Invertebrates",
-                                          "Lepidoptera",
-                                          "Echinoderms and Cnidaria",
-                                          "Porifera Sponges, Bryozoa, and Squirts",
-                                          "Plants",
-                                          "Miscellaneous") ~ "Invertebrates"),
-           vert = factor(vert, levels = c("Vertebrates", "Invertebrates")))
+    filter(rank == "Species")
 
   plotList <- vector("list", length = length(unique(mapDataCorrected$group_)))
   names(plotList) <- unique(mapDataCorrected$group_)

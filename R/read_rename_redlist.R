@@ -14,7 +14,7 @@ read_rename_redlist <- function(lemisDataRenamed){
   names(iucnDataList_corrected) <- c("amphibians", "birds", "mammals", "reptiles")
   for(n in names(iucnDataList_corrected)){
     iucnDataList_corrected[[n]] <- read.csv(here("data", "iucnData",
-                                            paste0(n, "_gbifNames.csv")))
+                                            paste0(n, "_assessments_gbifNames.csv")))
   }
 
   iucnDataList_syns <- vector("list", length = 4)
@@ -25,27 +25,7 @@ read_rename_redlist <- function(lemisDataRenamed){
   }
 
   lemisSpeciesData <- lemisDataRenamed %>%
-    filter(import_export == "I") %>%
-    filter(rank == "Species") %>%
-    filter(!group_ == "Miscellaneous" & !is.na(group_)) %>%
-    mutate(code_origin = sub("Ctry_", "", country_origin),
-           code_imp = sub("Ctry_", "", country_imp_exp)) %>%
-    mutate(vert = case_when(group_ %in% c("Terrestrial Mammals",
-                                          "Reptiles",
-                                          "Birds",
-                                          "Amphibians",
-                                          "Fish",
-                                          "Marine Mammals") ~ "Vertebrates",
-                            group_ %in% c("Crustaceans and Molluscs",
-                                          "Arachnids",
-                                          "Insecta and Myriapoda",
-                                          "Other Invertebrates",
-                                          "Lepidoptera",
-                                          "Echinoderms and Cnidaria",
-                                          "Porifera Sponges, Bryozoa, and Squirts",
-                                          "Plants",
-                                          "Miscellaneous") ~ "Invertebrates"),
-           vert = factor(vert, levels = c("Vertebrates", "Invertebrates")))
+    filter(rank == "Species")
 
   iucnRedlistSummary_list <- iucnDataList_corrected
   for(grp in names(iucnDataList_corrected)){

@@ -8,7 +8,7 @@
 plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
                                    worldDataList, portLocations,
                                    paletteList,
-                                   allDistributionDataList){
+                                   allDistributionData){
 
   # library(dplyr)
   # library(ggplot2)
@@ -23,44 +23,14 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
   # targets::tar_load("worldDataList")
   # targets::tar_load("portLocations")
   # targets::tar_load("paletteList")
-  # targets::tar_load("allDistributionDataList")
-  # targets::tar_load("extraManualDistributionDataList")
+  # targets::tar_load("allDistributionData")
 
   lemisData <- lemisDataRenamed %>%
-    filter(import_export == "I") %>%
-    filter(rank == "Species" & !corrected == "") %>%
-    filter(!group_ == "Miscellaneous" & !is.na(group_)) %>%
-    mutate(code_origin = sub("Ctry_", "", country_origin),
-           code_imp = sub("Ctry_", "", country_imp_exp)) %>%
-    left_join(lemisISOconversion) %>%
-    mutate(vert = case_when(group_ %in% c("Terrestrial Mammals",
-                                          "Reptiles",
-                                          "Birds",
-                                          "Amphibians",
-                                          "Fish",
-                                          "Marine Mammals") ~ "Vertebrates",
-                            group_ %in% c("Crustaceans and Molluscs",
-                                          "Arachnids",
-                                          "Insecta and Myriapoda",
-                                          "Other Invertebrates",
-                                          "Lepidoptera",
-                                          "Echinoderms and Cnidaria",
-                                          "Porifera Sponges, Bryozoa, and Squirts",
-                                          "Plants",
-                                          "Miscellaneous") ~ "Invertebrates"),
-           vert = factor(vert, levels = c("Vertebrates", "Invertebrates"))) %>%
-    mutate(
-      originCapWild = case_when(
-        source %in% c("A", "C", "D", "F") ~ "Captive",
-        source == "R" ~ "Ranched",
-        source == "W" ~ "Wild",
-        TRUE ~ "Other"
-      )
-    )
+    filter(rank == "Species" & !corrected == "")
 
   lemisData[which(is.na(lemisData$iso2) & lemisData$country_origin == "Ctry_NA"),]$iso2 <- "NA"
 
-  grpVector <- c("Birds", "Terrestrial Mammals", "Amphibians", "Reptiles")
+  grpVector <- c("Birds", "Terrestrial Mammals", "Amphibians", "Reptiles", "Arachnids")
 
   grpLower <- str_to_lower(ifelse(grpVector == "Terrestrial Mammals", "mammals", grpVector))
   stillMissingList <- vector("list", length = length(grpLower))
@@ -79,27 +49,19 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
     lemisGroup <- lemisData %>%
       filter(group_ == grp)
 
-    if(grp == "Birds"){
-      distData <- allDistributionDataList$birds
-    } else if(grp == "Terrestrial Mammals"){
-      distData <- allDistributionDataList$mammals
-    } else if(grp == "Amphibians"){
-      distData <- allDistributionDataList$amphibians
-    } else if(grp == "Reptiles"){
-      distData <- allDistributionDataList$reptiles
-    }
+    distData <- allDistributionData %>%
+      filter(group_ == grpL)
 
     lemisGroup_dist <- lemisGroup %>%
       filter(!corrected == "") %>%
-      left_join(distData %>%
-                  filter(!is.na(distISO2) & !distISO2 == "<NA>"),
+      left_join(distData,
                 by = "corrected")
 
-    noDistSpp <- lemisGroup_dist %>%
-      filter(is.na(distISO2) | distISO2 == "<NA>") %>%
-      pull(corrected) %>% unique()
-    noDistSpp <- noDistSpp[!noDistSpp == ""]
-    stillMissingList[[grpL]] <- noDistSpp
+    # noDistSpp <- lemisGroup_dist %>%
+    #   filter(is.na(distISO2) | distISO2 == "<NA>") %>%
+    #   pull(corrected) %>% unique()
+    # noDistSpp <- noDistSpp[!noDistSpp == ""]
+    # stillMissingList[[grpL]] <- noDistSpp
     # {next}
 
     # colour settings
@@ -145,7 +107,7 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
 
     lemisGroup_dist <- lemisGroup_dist %>%
       rowwise() %>%
-      mutate(nativeOrigin = str_detect(distISO2, iso2))
+      mutate(nativeOrigin = str_detect(allDistISO2, iso2))
 
     write.csv(lemisGroup_dist, here("tables", paste0("LEMIS_distributionsAdded_", grp, ".csv")),
               row.names = FALSE)
@@ -305,7 +267,7 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
         axis.ticks = element_blank(),
         axis.title = element_blank(),
         axis.text = element_blank(),
-        legend.position = c(1, 0),
+        legend.position.inside = c(1, 0),
         legend.background = element_rect(fill = "white"),
         legend.margin = margin(0,0,0,0),
         legend.key.size = unit(0.5, "mm"),
@@ -317,8 +279,7 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
         legend.box.background = element_rect(fill = "white", colour = "white", linewidth = 2),
         legend.justification = c(1,0),
         legend.direction = "horizontal",
-        legend.title.align = 0,
-        legend.title = element_markdown(lineheight = 0.85, margin = margin(0,0,0,0))
+        legend.title = element_markdown(lineheight = 0.85, margin = margin(0,0,0,0), hjust = 0)
       ) +
       guides(
         linewidth = guide_legend(override.aes = list(linewidth = c(0.5,4)),
@@ -346,7 +307,8 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
     plotList[c("Terrestrial Mammals",
                "Birds",
                "Reptiles",
-               "Amphibians"
+               "Amphibians",
+               "Arachnids"
     )],
     ncol = 2)
 
