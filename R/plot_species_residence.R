@@ -18,6 +18,8 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
   # library(tidyr)
   # library(scatterpie)
   # library(ggtext)
+  # library(ggnewscale)
+  # library(patchwork)
   # targets::tar_load("lemisDataRenamed")
   # targets::tar_load("lemisISOconversion")
   # targets::tar_load("worldDataList")
@@ -169,12 +171,35 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
     write.csv(lemisGroup_mismatches, here("tables", paste0("residenceWildMismatchSpecies_", grp, ".csv")),
               row.names = FALSE)
 
+    worldData_nSpp <- worldDataList$worldData %>%
+      left_join(lemisGroup_plotdata %>%
+                  select(iso2, nSpp_total))
+    wrappedData_nSpp <- worldDataList$wrappedData %>%
+      left_join(lemisGroup_plotdata %>%
+                  select(iso2, nSpp_total))
+
+    # colour settings
+    groupColour <- paletteList$groupPaletteDF %>%
+      filter(group_ == grp) %>%
+      pull(group_colour)
+
+    groupColourLight_nSpp <- lighten(groupColour,
+                                amount = 0.5)
+    groupColourDark_nSpp <- darken(groupColour,
+                              amount = 0.35)
+
     world_gg <- ggplot() +
       geom_hline(yintercept = 0, linetype = 2, colour = "grey85") +
-      geom_polygon(data = worldDataList$worldData, aes(x = long, y = lat, group = group),
-                   fill = "grey50", colour = "grey35", linewidth = 0.025) +
-      geom_polygon(data = worldDataList$wrappedData, aes(x = long, y = lat, group = group),
-                   fill = "grey50", colour = "grey35", linewidth = 0.025)
+      geom_polygon(data = worldData_nSpp, aes(x = long, y = lat, group = group,
+                                                       fill = nSpp_total),
+                   # fill = "grey50",
+                   colour = "grey35", linewidth = 0.025) +
+      geom_polygon(data = wrappedData_nSpp, aes(x = long, y = lat, group = group,
+                                                         fill = nSpp_total),
+                   # fill = "grey50",
+                   colour = "grey35", linewidth = 0.025) +
+      scale_fill_gradient(high = groupColourDark_nSpp, low = groupColourLight_nSpp,
+                          na.value = "grey75")
 
     # radDF <- data.frame("group" = c("Birds", "Terrestrial Mammals", "Amphibians", "Reptiles"),
     #                     radModLeg = c(150, 80, 20, 150),
@@ -194,35 +219,49 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
     # radiusScaled <- radiusScaled
     # radiusScaled * attr(radiusScaled, 'scaled:scale') / 2
 
+    lemisGroup_plotdata$scaledSpp <- scale(lemisGroup_plotdata$nSpp_total, center = FALSE)[,1]
+
+    lemisGroup_plotdata <- lemisGroup_plotdata %>%
+      mutate(scaledSpp = scaledSpp* radiusModifier)
+
     completePlot <-
       world_gg +
-      geom_curve(data = routeLineData,
+      new_scale_fill() +
+      # geom_curve(data = routeLineData,
+      #            aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
+      #                xend = if_else(port_lon > 90, -180-(180-port_lon), port_lon),
+      geom_curve(data = lemisGroup_plotdata,
                  aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
-                     xend = if_else(port_lon > 90, -180-(180-port_lon), port_lon),
+                     xend = -100,
                      y = centre_y_origin,
-                     yend = port_lat,
-                     linewidth = nSpp,
-                     alpha = nSpp),
+                     yend = 40,
+                     # linewidth = nSpp,
+                     # alpha = nSpp),
+                     linewidth = nSpp_total,
+                     alpha = nSpp_total),
                  position = position_jitter(width = 0.5, height = 0.5),
                  curvature = -0.5,
                  angle = 140,
                  colour = groupColour
       ) +
 
-      geom_point(data = portLocations,
-                 aes(x = port_lon, y = port_lat),
-                 size = 0.5,
-                 shape = 21,
-                 colour = "white",
-                 fill = groupColourDark
-                 # fill = "black"
-      ) +
+      geom_polygon(data = worldData_nSpp %>%
+                     filter(iso2 == "US"), aes(x = long, y = lat, group = group),
+                   colour = nativePalette[2], fill = NA, linewidth = 0.25) +
+
+      # geom_point(data = portLocations,
+      #            aes(x = port_lon, y = port_lat),
+      #            size = 0.5,
+      #            shape = 21,
+      #            colour = "white",
+      #            fill = groupColourDark
+      #            # fill = "black"
+      # ) +
       geom_point(data = lemisGroup_plotdata %>%
-                   mutate(scaledSpp = scale(nSpp_total, center = FALSE)* radiusModifier) %>%
                    filter(scaledSpp < 5),
                  aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
                      y = centre_y_origin),
-                 size = 0.5,
+                 size = 0.35,
                  shape = 21,
                  colour = "white",
                  fill = groupColour
@@ -230,8 +269,9 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
       geom_scatterpie(data = lemisGroup_plotdata,
                       aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
                           y = centre_y_origin, group = iso2,
-                          r = scale(nSpp_total, center = FALSE)* radiusModifier),
-                      cols = c("Resident", "NonResident", "Unknown"), color = NA, alpha = 0.8) +
+                          r = scaledSpp),
+                      sorted_by_radius = TRUE, linewidth = 0.15,
+                      cols = c("Resident", "NonResident", "Unknown"), color = "white", alpha = 0.8) +
       geom_scatterpie_legend(scale(lemisGroup_plotdata$nSpp_total, center = FALSE)* radiusModifierLegend,
                              n = 4,
                              x = -250, y = -65,

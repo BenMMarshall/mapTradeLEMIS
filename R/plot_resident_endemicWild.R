@@ -146,7 +146,7 @@ plot_resident_endemicWild <- function(lemisDataRenamed,
                       ylim = c(-84, 84),
                       expand = 0) +
       # scale_fill_viridis_d() +
-      scale_fill_gradient(low = groupColourDark, high = groupColourLight) +
+      scale_fill_gradient(high = groupColourDark, low = groupColourLight) +
       # scale_linewidth_continuous(range = c(0.15, 4), breaks = routeRange) +
       scale_size_continuous(range = c(1, 5)) +
       # scale_alpha_continuous(range = c(0.1, 0.5), breaks = scales::pretty_breaks(n = 5)) +
