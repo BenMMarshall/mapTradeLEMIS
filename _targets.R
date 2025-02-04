@@ -26,6 +26,7 @@ tar_option_set(
                "patchwork",
                "rsvg",
                "ggimage",
+               "ggnewscale",
                "scatterpie",
                "colorspace"
   ), # packages that your targets need to run
@@ -179,7 +180,7 @@ list(
     render_rmd(fileIN = here::here("notebook", "manuscript",
                                    "mapLEMISResults.Rmd"),
                fileOUT = here::here("notebook", "manuscript",
-                                    "mapLEMISResults.html"),
+                                    "mapLEMISResults.doc"),
                tableSupps, plotSpeciesResidence),
     priority = 0
   )

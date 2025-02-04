@@ -59,6 +59,15 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
       left_join(distData,
                 by = "corrected")
 
+  #   noDistSpp <- lemisGroup_dist %>%
+  #       filter(is.na(allDistISO2) | allDistISO2 == "<NA>") %>%
+  #       pull(corrected) %>% unique()
+  #   distSpp <- lemisGroup_dist %>%
+  #     pull(corrected) %>% unique()
+  #   print(grp)
+  #   print(100 - length(noDistSpp) / length(distSpp) *100)
+  # }
+
     # noDistSpp <- lemisGroup_dist %>%
     #   filter(is.na(distISO2) | distISO2 == "<NA>") %>%
     #   pull(corrected) %>% unique()
@@ -258,7 +267,7 @@ plot_species_residence <- function(lemisDataRenamed, lemisISOconversion,
       #            # fill = "black"
       # ) +
       geom_point(data = lemisGroup_plotdata %>%
-                   filter(scaledSpp < 5),
+                   filter(scaledSpp < 1),
                  aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
                      y = centre_y_origin),
                  size = 0.35,

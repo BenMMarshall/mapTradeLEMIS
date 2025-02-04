@@ -11,7 +11,7 @@ plot_species_mismatch <- function(paletteList, ...){
 
   # paletteList <- generate_palette()
 
-  # grp <- "Amphibians"
+  # grp <- "Arachnids"
   groups <- c("Reptiles", "Amphibians", "Terrestrial Mammals", "Birds", "Arachnids")
   allOriginList <- list()
   i <- 0
@@ -48,19 +48,25 @@ plot_species_mismatch <- function(paletteList, ...){
     left_join(paletteList$groupPaletteDF) %>%
     mutate(group_col = glue::glue("<b><i style = 'font-size:16pt; color:{group_colour}'>{group_}</i></b>")) %>%
     filter(!iso2 == "XX") %>%
+    mutate(group_col = factor(group_col, levels = c(
+      "<b><i style = 'font-size:16pt; color:#7E3E1B'>Arachnids</i></b>",
+      "<b><i style = 'font-size:16pt; color:#9EB78D'>Birds</i></b>",
+      "<b><i style = 'font-size:16pt; color:#4e862d'>Reptiles</i></b>",
+      "<b><i style = 'font-size:16pt; color:#5BC0BE'>Amphibians</i></b>",
+      "<b><i style = 'font-size:16pt; color:#CECE85'>Terrestrial Mammals</i></b>"
+    ))
+    ) %>%
     # mutate(tropical = case_when(
     #   centre_y_origin < 23.5 & centre_y_origin > -23.5 ~ "Tropical",
     #   TRUE ~ "NotTropical"),
-    #   continent = countrycode(iso2, origin = "iso2c", destination = "continent")
-    #   ) %>%
     ggplot() +
     geom_point(aes(x = nSpp_total, y = nSpp_NonResidentWildMismatch,
-                   size = nWhole_total, colour = group_col), alpha = 0.75) +
+                   size = nWhole, colour = group_col), alpha = 0.75) +
     geom_text_repel(data = isoLabels,
                     aes(x = nSpp_total, y = nSpp_NonResidentWildMismatch,
-                        label = iso2, colour = group_col),
+                        label = country_name, colour = group_col),
                     fontface = 2) +
-    facet_wrap(.~group_col, scales = "free") +
+    facet_wrap(vars(group_col), scales = "free", nrow = 2) +
     scale_colour_manual(values = groupVec) +
     scale_size_continuous(range = c(1.5, 9)) +
     labs(x = "Total Number of Traded Species", y = "Number of Traded\nNon-Resident Species") +
@@ -73,7 +79,8 @@ plot_species_mismatch <- function(paletteList, ...){
       axis.title.x = element_text(margin = margin(5,0,5,0)),
       axis.title.x.top = element_text(margin = margin(5,0,5,0)),
       legend.title = element_text(face = 2),
-      legend.position = "none",
+      # legend.position = "none",
+      legend.text = element_markdown(),
       axis.text.y = element_markdown(),
       axis.ticks.y = element_blank(),
       strip.background = element_blank(),
