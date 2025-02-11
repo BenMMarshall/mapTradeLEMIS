@@ -8,6 +8,7 @@
 plot_species_mismatch <- function(paletteList, ...){
   # library(ggplot2)
   # library(ggrepel)
+  # library(ggtext)
 
   # paletteList <- generate_palette()
 
@@ -17,10 +18,20 @@ plot_species_mismatch <- function(paletteList, ...){
   i <- 0
   for(grp in groups){
     i <- i +1
-    speciesOriginResidenceTable <- read.csv(here::here("tables", paste0("SuppTable - SpeciesOriginResidence_", grp, ".csv")))
-    quantOriginResidenceTable <- read.csv(here::here("tables", paste0("SuppTable - QuantOriginResidence_", grp, ".csv")))
+    speciesOriginResidenceTable <- read.csv(here::here("tables", paste0("SuppTable - SpeciesOriginResidence_", grp, ".csv")),
+                                            na.strings = "<NA>")
+    quantOriginResidenceTable <- read.csv(here::here("tables", paste0("SuppTable - QuantOriginResidence_", grp, ".csv")),
+                                          na.strings = "<NA>")
     originResidenceData <- speciesOriginResidenceTable %>%
-      left_join(quantOriginResidenceTable)
+      mutate(
+        centre_x_origin = as.numeric(centre_x_origin),
+        centre_y_origin = as.numeric(centre_y_origin)
+      ) %>%
+      left_join(quantOriginResidenceTable %>%
+                  mutate(
+                    centre_x_origin = as.numeric(centre_x_origin),
+                    centre_y_origin = as.numeric(centre_y_origin)
+                  ))
     originResidenceData$group_ <- grp
     allOriginList[[i]] <- originResidenceData
   }
@@ -33,7 +44,12 @@ plot_species_mismatch <- function(paletteList, ...){
 
   isoLabels <- allOriginResidenceData %>%
     left_join(paletteList$groupPaletteDF) %>%
-    mutate(group_col = glue::glue("<b><i style = 'font-size:16pt; color:{group_colour}'>{group_}</i></b>")) %>%
+    mutate(group_col = glue::glue("<b><i style = 'font-size:16pt; color:{group_colour}'>{group_}</i></b>"),
+           country_name = case_when(
+             country_name == "United Kingdom" ~ "UK",
+             country_name == "United States" ~ "USA",
+             TRUE ~ country_name
+           )) %>%
     filter(!iso2 == "XX") %>%
     group_by(group_) %>%
     filter(
@@ -69,7 +85,7 @@ plot_species_mismatch <- function(paletteList, ...){
     facet_wrap(vars(group_col), scales = "free", nrow = 2) +
     scale_colour_manual(values = groupVec) +
     scale_size_continuous(range = c(1.5, 9)) +
-    labs(x = "Total Number of Traded Species", y = "Number of Traded\nNon-Resident Species") +
+    labs(x = "Total Number of Traded Species", y = "Number of Wild-sourced Traded\nNon-Resident Species") +
     theme_bw() +
     theme(
       line = element_line(colour = "#080808"),

@@ -164,6 +164,7 @@ combine_distribution_data <- function(extraManualDistributionDataList){
   distributionDataList <- vector("list", length = 5)
   names(distributionDataList) <- c("amphibians", "birds", "mammals", "reptiles", "arachnids")
   for(n in names(distributionDataList)){
+    # n <- "reptiles"
     extData <- read.csv(here("data", "externalDistributionData",
                              paste0(n, "_distributionData_gbifNames.csv")),
                         na.strings = c("", "<NA>"))
@@ -284,7 +285,7 @@ combine_distribution_data <- function(extraManualDistributionDataList){
     names(withinGroupList) <- uniNames
     for(sp in uniNames){
       print(sp)
-      # sp<- "Nhandu carapoensis"
+      # sp<- uniNames[1]
 
       uniqueISO2 <- unique(c(str_split(distributionDataList[[n]][distributionDataList[[n]]$corrected == sp,]$extDistISO2,
                                        ", ", simplify = TRUE),
@@ -292,6 +293,7 @@ combine_distribution_data <- function(extraManualDistributionDataList){
                                        ", ", simplify = TRUE),
                              str_split(gbifDistributionDataList[[n]][gbifDistributionDataList[[n]]$corrected == sp,]$gbifDistISO2,
                                        ", ", simplify = TRUE)))
+      uniqueISO2 <- uniqueISO2[!is.na(uniqueISO2) & uniqueISO2 != ""]
 
       withinGroupList[[sp]] <- data.frame(corrected = sp,
                                           allDistISO2 = paste0(uniqueISO2, collapse = ", "),

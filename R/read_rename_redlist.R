@@ -62,6 +62,14 @@ read_rename_redlist <- function(lemisDataRenamed){
                                                             stringr::str_to_lower(grp),
                                                             ".csv")), row.names = FALSE)
 
+    critendangeredTraded <- tempIUCNData %>%
+      filter(traded == "Traded") %>%
+      filter(redlistCategory %in% c("Critically Endangered", "Extinct in the Wild"))
+
+    write.csv(critendangeredTraded, here("data", "iucnData", paste0("critendangeredTradedIUCNdata_",
+                                                                stringr::str_to_lower(grp),
+                                                                ".csv")), row.names = FALSE)
+
     iucnRedlistSummary_list[[grp]] <- tempIUCNData %>%
       mutate(redlistCategory = case_when(
         redlistCategory %in% c("Lower Risk/conservation dependent", "Lower Risk/least concern") ~ "Least Concern",

@@ -93,7 +93,7 @@ list(
   ),
   tar_target(
     iucnSummaryPlot,
-    plot_iucn_summary(iucnSummary, paletteList)
+    plot_iucn_summary(iucnSummary, paletteList, allDistributionData, worldDataList)
   ),
   tar_target(
     plotSpeciesOrigin,
@@ -173,6 +173,11 @@ list(
   tar_target(
     plotExtinctPurpose,
     plot_extinct_purpose(lemisDataRenamed, paletteList
+    )
+  ),
+  tar_target(
+    plotCritendangeredPurpose,
+    plot_critendangered_purpose(lemisDataRenamed, paletteList
     )
   ),
   tar_target(

@@ -10,6 +10,7 @@ plot_species_origin <- function(lemisDataCorrected,
                                 paletteList,
                                 lemisISOconversion,
                                 worldDataList){
+  # targets::tar_load("lemisDataRenamed")
   # lemisDataCorrected <- lemisDataRenamed
   mapDataCorrected <- lemisDataCorrected %>%
     filter(rank == "Species")
@@ -115,27 +116,32 @@ plot_species_origin <- function(lemisDataCorrected,
                  ),
                  shape = 21,
                  colour = "white", fill = groupColour) +
-      geom_text(data = originTop,
-                aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
-                    y = centre_y_origin, label = iso2
-                ),
-                colour = "white", size = 1.75, fontface = 2) +
+      # geom_text(data = originTop,
+      #           aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
+      #               y = centre_y_origin, label = iso2
+      #           ),
+      #           colour = "white", size = 1.75, fontface = 2) +
       geom_point(data = portSpecies,
                  aes(x = if_else(port_lon > 90, -180-(180-port_lon), port_lon),
                      y = port_lat,
                      size = nSpp),
                  shape = 21,
                  colour = "white", fill = groupColourDark) +
-      geom_text_repel(data = originTop,
-                      aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
-                          y = centre_y_origin, label = lab
-                      ),
-                      colour = "grey15", size = 1.75, fontface = 2) +
+      # geom_text_repel(data = originTop,
+      #                 aes(x = if_else(centre_x_origin > 90, -180-(180-centre_x_origin), centre_x_origin),
+      #                     y = centre_y_origin, label = lab
+      #                 ),
+      #                 colour = "grey15", size = 1.75, fontface = 2) +
+      annotate("richtext", x = -127, y = -48.6,
+               label = "<b style = 'font-size:8pt'>Unknown</b>",
+               hjust = 0.5, vjust = 1, lineheight = 0.95, colour = groupColourDark,
+               fill = NA, label.color = NA
+               ) +
       annotate("richtext", x = 89, y = -83,
-               label = paste0("<b style = 'font-size:8pt'>Top 5 Routes</b><br><i style = 'font-size:6pt'>",
+               label = paste0("<b style = 'font-size:10pt'>Top 5 Routes</b><br><i style = 'font-size:8pt'>",
                               paste0(routesTop$routeSummaryLab, collapse = "<br>"),
                               "</i>"),
-               hjust = 1, vjust = 0, lineheight = 0.92) +
+               hjust = 1, vjust = 0, lineheight = 0.95) +
       coord_cartesian(xlim = c(-180-90, 90),
                       ylim = c(-84, 84),
                       expand = 0) +
@@ -143,9 +149,9 @@ plot_species_origin <- function(lemisDataCorrected,
       scale_size_continuous(range = c(0.15, 5), breaks = pointRange) +
       scale_alpha_continuous(range = c(0.1, 0.5), breaks = scales::pretty_breaks(n = 5)) +
       labs(title = titleColoured,
-           size = "<b style = 'font-size:8pt'># Species</b><br><i style = 'font-size:6pt'>Origin and Port</i>",
-           linewidth = "<i style = 'font-size:6pt'>Origin to Port Route</i>",
-           alpha = "<i style = 'font-size:6pt'>Origin to Port Route</i>") +
+           size = "<b style = 'font-size:10pt'># Species</b><br><i style = 'font-size:8pt'>Origin and Port</i>",
+           linewidth = "<i style = 'font-size:8pt'>Origin to Port Route</i>",
+           alpha = "<i style = 'font-size:8pt'>Origin to Port Route</i>") +
       theme_bw() +
       theme(
         aspect.ratio = 0.5,
@@ -159,25 +165,25 @@ plot_species_origin <- function(lemisDataCorrected,
         axis.text = element_blank(),
         legend.position = c(0, 0),
         legend.background = element_rect(fill = "white"),
-        legend.margin = margin(0,0,0,0),
+        legend.margin = margin(2,0,0,0),
         legend.key.size = unit(0.5, "mm"),
-        legend.key.height = unit(0.25, "mm"),
-        legend.key.width = unit(0.5, "mm"),
-        legend.spacing = unit(0.1, "mm"),
+        legend.key.height = unit(0.5, "mm"),
+        legend.key.width = unit(0.8, "mm"),
+        legend.spacing = unit(0.8, "mm"),
         legend.box.margin = margin(0,0,0,0),
-        legend.text = element_text(margin = margin(0,0,0,0), size = 5),
+        legend.text = element_text(margin = margin(0,0,0,0), size = 7),
         legend.box.background = element_rect(fill = "white", colour = "white", linewidth = 2),
         legend.justification = c(0,0),
         legend.direction = "horizontal",
         # legend.title.align = 0,
-        legend.title = element_markdown(lineheight = 0.85, margin = margin(0,0,0,0),
+        legend.title = element_markdown(lineheight = 1.2, margin = margin(0,0,0,0), size = 8,
                                         hjust = 0)
       ) +
       # geom_image(data = imageLocation,
       #            aes(x = x, y = y,
       #                image = image), size = 0.15) +
       guides(
-        linewidth = guide_legend(override.aes = list(linewidth = c(0.5,4)),
+        linewidth = guide_legend(override.aes = list(linewidth = c(0.75,4)),
                                  order = 2, nrow = 1,
                                  direction = "horizontal",
                                  title.position = "top",
@@ -187,7 +193,7 @@ plot_species_origin <- function(lemisDataCorrected,
         #                      direction = "horizontal",
         #                      title.position = "top",
         #                      margin = margin(0,0,0,0)),
-        size = guide_legend(override.aes = list(size = c(1,5)),
+        size = guide_legend(override.aes = list(size = c(2,6)),
                             order = 1, nrow = 1,
                             direction = "horizontal",
                             title.position = "top",
