@@ -204,7 +204,8 @@ plot_resident_endemicWild <- function(lemisDataRenamed,
 
   endemicDataAll %>%
     group_by(group_) %>%
-    slice_max(nSppResidentWildEndemic, n = 5)
+    slice_max(nSppResidentWildEndemic, n = 5) %>%
+    print(n = 100)
 
   write.csv(endemicDataAll, file = here("tables", "endemicDataCountries.csv"), row.names = FALSE)
 
